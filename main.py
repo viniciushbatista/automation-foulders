@@ -8,7 +8,7 @@ pasta_destino_geral = r'/home/vinicius/Documentos/workspace/pasta-destino' #cami
 
 #Configuração de limite
 limite_por_tar = None
-limite_total = 50
+limite_total = 20 #limite de arquivos para serem lidos caso não queira coloque 'none'
 arquivos_processados = 0
 
 #busca todos os arquivos .tar (windows) ou .tar.gz (linux/ubuntu)
@@ -81,7 +81,7 @@ def processar_tar(caminho_tar, nomes_desejados, pasta_destino_geral, limite=None
         temperatura = extrair_valor_por_chave(gz, 'initialConditions', 'temperatureBB')
         velocidade = extrair_valor_por_chave(gz, 'initialConditions', 'flowVelocityBB')
 
-        #Pegando a string completa da velocidade, removendo parênteses e trocando espaços por underline
+        #string velocidade 'initialConditions'
         if velocidade:
             valor_velocidade = (
                 velocidade.strip()
@@ -93,6 +93,7 @@ def processar_tar(caminho_tar, nomes_desejados, pasta_destino_geral, limite=None
         else:
             valor_velocidade = "velN/A"
 
+        #string temperatura 'initialConditions'
         if temperatura:
             valor_temperatura = (
                 temperatura.strip()
@@ -105,8 +106,14 @@ def processar_tar(caminho_tar, nomes_desejados, pasta_destino_geral, limite=None
         nome_pasta_destino = f"{mach_prefixo}-T{valor_temperatura}-V{valor_velocidade}-{num_outra_pasta}"
 
         pasta_destino = os.path.join(pasta_destino_geral, nome_pasta_destino)
-        if not os.path.exists(pasta_destino):
+
+
+        if os.path.exists(pasta_destino):
+            print(f"Pasta {pasta_destino} já existe. Pulando processamento desse arquivo.")
+            return
+        else:
             os.makedirs(pasta_destino)
+            print(f"Pasta criada: {pasta_destino}")
 
         #Extrair os arquivos desejados
         for membro in membros:
@@ -154,4 +161,4 @@ else:
             limite=limite_por_tar
         )
 
-print("\n Processo concluído com sucesso!")
+print("\n Processo concluído")
