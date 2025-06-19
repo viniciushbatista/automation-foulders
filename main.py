@@ -3,15 +3,15 @@ import tarfile
 import re
 
 #caminhos principais
-pasta_mae = r'/home/vinicius/Documentos/workspace/simulations'
-pasta_destino_geral = r'/home/vinicius/Documentos/workspace/pasta-destino'
+pasta_mae = r'/home/vinicius/Documentos/workspace/simulations' #caminho da pasta principal
+pasta_destino_geral = r'/home/vinicius/Documentos/workspace/pasta-destino' #caminho da pasta onde irão os arquivos
 
 #Configuração de limite
 limite_por_tar = None
-limite_total = 5
+limite_total = 50
 arquivos_processados = 0
 
-
+#busca todos os arquivos .tar (windows) ou .tar.gz (linux/ubuntu)
 def buscar_todos_tar(pasta_raiz):
     lista_tar = []
     for raiz, dirs, arquivos in os.walk(pasta_raiz):
@@ -20,7 +20,7 @@ def buscar_todos_tar(pasta_raiz):
                 lista_tar.append(os.path.join(raiz, arquivo))
     return lista_tar
 
-
+#ler os dados que eu quero do arquivo
 def extrair_valor_por_chave(gz, arquivo_nome, chave):
     try:
         membro = next(m for m in gz.getmembers() if arquivo_nome in m.name)
@@ -44,7 +44,7 @@ def extrair_numero_do_nome_tar(caminho_arquivo_tar):
     Extrai o padrão xxx_xx do nome do arquivo .tar
     Exemplo: teste_axi_008_04.tar → retorna 008_04
     """
-    nome_arquivo = os.path.basename(caminho_arquivo_tar)  # 🔥 Pega só o nome, sem caminho
+    nome_arquivo = os.path.basename(caminho_arquivo_tar)  #nome do arquivo .tar.gz teste_axi_xxx_xx
 
     match = re.search(r'teste_axi_(\d{3}_\d{2})\.tar\.gz$', nome_arquivo)
     if match:
@@ -52,7 +52,7 @@ def extrair_numero_do_nome_tar(caminho_arquivo_tar):
     else:
         return "numN/A"
 
-
+#nome da pasta machxe
 def obter_nome_primeira_subpasta(caminho_tar):
     caminho_relativo = os.path.relpath(caminho_tar, pasta_mae)
     partes = caminho_relativo.split(os.sep)
@@ -108,7 +108,7 @@ def processar_tar(caminho_tar, nomes_desejados, pasta_destino_geral, limite=None
         if not os.path.exists(pasta_destino):
             os.makedirs(pasta_destino)
 
-        # 🔗 Extrair os arquivos desejados
+        #Extrair os arquivos desejados
         for membro in membros:
             if membro.isfile() and any(nome.lower() in membro.name.lower() for nome in nomes_desejados):
                 print(f"Encontrado no .gz: {membro.name}")
