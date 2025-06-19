@@ -2,13 +2,13 @@ import os
 import tarfile
 import re
 
-# Caminhos principais
+#caminhos principais
 pasta_mae = r'/home/vinicius/Documentos/workspace/simulations'
 pasta_destino_geral = r'/home/vinicius/Documentos/workspace/pasta-destino'
 
-# Configuração de limite (opcional)
+#Configuração de limite
 limite_por_tar = None
-limite_total = 10
+limite_total = 5
 arquivos_processados = 0
 
 
@@ -33,35 +33,31 @@ def extrair_valor_por_chave(gz, arquivo_nome, chave):
                     valor = re.sub(' +', ' ', valor)
                     return valor
     except StopIteration:
-        print(f" Arquivo '{arquivo_nome}' não encontrado no .gz")
+        print(f"Arquivo '{arquivo_nome}' não encontrado no .gz")
     except Exception as e:
-        print(f" Erro ao ler '{arquivo_nome}': {e}")
+        print(f"Erro ao ler '{arquivo_nome}': {e}")
     return None
 
 
-def extrair_numero_da_outra_pasta(nome_pasta):
-    partes = nome_pasta.split('_')
-    if len(partes) >= 4:
-        return partes[2] + "_" + partes[3]
-    return nome_pasta
+def extrair_numero_do_nome_tar(caminho_arquivo_tar):
+    """
+    Extrai o padrão xxx_xx do nome do arquivo .tar
+    Exemplo: teste_axi_008_04.tar → retorna 008_04
+    """
+    nome_arquivo = os.path.basename(caminho_arquivo_tar)  # 🔥 Pega só o nome, sem caminho
 
+    match = re.search(r'teste_axi_(\d{3}_\d{2})\.tar\.gz$', nome_arquivo)
+    if match:
+        return match.group(1)
+    else:
+        return "numN/A"
 
-#def obter_nome_primeira_subpasta(caminho_tar):
-#    caminho_relativo = os.path.relpath(caminho_tar, pasta_mae)
-#    partes = caminho_relativo.split(os.sep)
-#    return partes[0] if partes else "subpasta_desconhecida"
 
 def obter_nome_primeira_subpasta(caminho_tar):
     caminho_relativo = os.path.relpath(caminho_tar, pasta_mae)
     partes = caminho_relativo.split(os.sep)
-    
-    if partes:
-        primeiro_elemento = partes[0]
-        # Divide o primeiro elemento pelo hífen e pega a primeira parte
-        nome_curto = primeiro_elemento.split('-')[0]
-        return nome_curto
-    else:
-        return "subpasta_desconhecida"
+    return partes[0] if partes else "subpasta_desconhecida"
+
 
 def processar_tar(caminho_tar, nomes_desejados, pasta_destino_geral, limite=None):
     global arquivos_processados
@@ -70,25 +66,43 @@ def processar_tar(caminho_tar, nomes_desejados, pasta_destino_geral, limite=None
         membros = gz.getmembers()
         encontrados = 0
 
-        #Nome da primeira subpasta da pasta mãe
+        #Nome da subpasta principal (ex: mach08e-blabla)
         nome_subpasta_principal = obter_nome_primeira_subpasta(caminho_tar)
 
-        #Extrair machXXe
+        #Extrair machXXe do nome da subpasta
         mach_prefixo_match = re.match(r'(mach\d{2}e)-', nome_subpasta_principal, re.IGNORECASE)
         mach_prefixo = mach_prefixo_match.group(1) if mach_prefixo_match else "machN/A"
 
-        #Extrair o sufixo tipo 12_32
-        num_outra_pasta = extrair_numero_da_outra_pasta(nome_subpasta_principal)
+        #Extrair o numero do nome do .gz (ex: 008_04)
+        nome_tar = os.path.basename(caminho_tar)
+        num_outra_pasta = extrair_numero_do_nome_tar(nome_tar)
 
-        #Extrair valores de temperatura e velocidade
+        #Extrair temperatura e velocidade
         temperatura = extrair_valor_por_chave(gz, 'initialConditions', 'temperatureBB')
         velocidade = extrair_valor_por_chave(gz, 'initialConditions', 'flowVelocityBB')
 
-        velocidade_match = re.search(r'\(?([0-9]*\.?[0-9]+)', velocidade) if velocidade else None
-        valor_velocidade = velocidade_match.group(1) if velocidade_match else "velN/A"
+        #Pegando a string completa da velocidade, removendo parênteses e trocando espaços por underline
+        if velocidade:
+            valor_velocidade = (
+                velocidade.strip()
+                .replace('(', '')
+                .replace(')', '')
+                .replace(' ', '_')
+                .replace(';', '')
+            )
+        else:
+            valor_velocidade = "velN/A"
+
+        if temperatura:
+            valor_temperatura = (
+                temperatura.strip()
+                .replace(';', '')
+            )
+        else:
+            valor_temperatura = "TempN/A"
 
         #Nome da pasta destino
-        nome_pasta_destino = f"{mach_prefixo}-T{temperatura}-{valor_velocidade}-{num_outra_pasta}"
+        nome_pasta_destino = f"{mach_prefixo}-T{valor_temperatura}-V{valor_velocidade}-{num_outra_pasta}"
 
         pasta_destino = os.path.join(pasta_destino_geral, nome_pasta_destino)
         if not os.path.exists(pasta_destino):
