@@ -8,7 +8,7 @@ pasta_destino_geral = r'/home/vinicius/Documentos/workspace/pasta-destino' #cami
 
 #Configuração de limite
 limite_por_tar = None
-limite_total = 20 #limite de arquivos para serem lidos caso não queira coloque 'none'
+limite_total = None #limite de arquivos para serem lidos caso não queira coloque 'None'
 arquivos_processados = 0
 
 #busca todos os arquivos .tar (windows) ou .tar.gz (linux/ubuntu)
